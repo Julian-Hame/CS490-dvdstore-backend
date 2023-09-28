@@ -79,6 +79,34 @@ module.exports = (app) => {
         })
     })
 
+    app.get('/api/film-genre/:id', (req, res) => {
+        let id = req.params.id;
+        const query = "SELECT film.film_id, category.category_id, name FROM film INNER JOIN film_category ON film_category.film_id=film.film_id INNER JOIN category ON category.category_id=film_category.category_id WHERE film.film_id = '" + id + "'"
+    
+        connection.query(query, (err, results) => {
+            if(err) {
+                console.error('Error executing query:', err);
+                res.status(500).json({error: 'Error retrieving films from the database.'});
+                return;
+            }
+            res.json(results);
+        })
+    })
+
+    app.get('/api/film-actors', (req, res) => {
+        let id = req.params.id;
+        const query = "SELECT actor.first_name, actor.last_name, film.title FROM actor INNER JOIN film_actor ON actor.actor_id=film_actor.actor_id INNER JOIN film ON film_actor.film_id=film.film_id"
+    
+        connection.query(query, (err, results) => {
+            if(err) {
+                console.error('Error executing query:', err);
+                res.status(500).json({error: 'Error retrieving film actors from the database.'});
+                return;
+            }
+            res.json(results);
+        })
+    })
+
     app.get('/api/actor/:id', (req, res) => {
         let id = req.params.id;
         const query = "SELECT * FROM actor WHERE actor_id='" + id + "'"
@@ -101,6 +129,34 @@ module.exports = (app) => {
             if(err) {
                 console.error('Error executing query:', err);
                 res.status(500).json({error: 'Error retrieving films from the database.'});
+                return;
+            }
+            res.json(results);
+        })
+    })
+
+    app.get('/api/customer/:id', (req, res) => {
+        let id = req.params.id;
+        const query = "SELECT * FROM customer WHERE customer_id='" + id + "'"
+    
+        connection.query(query, (err, results) => {
+            if(err) {
+                console.error('Error executing query:', err);
+                res.status(500).json({error: 'Error retrieving customers from the database.'});
+                return;
+            }
+            res.json(results);
+        })
+    })
+
+    app.get('/api/customer-rented/:id', (req, res) => {
+        let id = req.params.id;
+        const query = "SELECT film.title FROM film INNER JOIN inventory ON film.film_id = inventory.film_id INNER JOIN rental ON rental.inventory_id = inventory.inventory_id INNER JOIN customer ON rental.customer_id = customer.customer_id WHERE customer.customer_id = '" + id + "'"
+    
+        connection.query(query, (err, results) => {
+            if(err) {
+                console.error('Error executing query:', err);
+                res.status(500).json({error: 'Error retrieving customers from the database.'});
                 return;
             }
             res.json(results);
