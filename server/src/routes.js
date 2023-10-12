@@ -40,7 +40,7 @@ module.exports = (app) => {
     })
 
     app.get('/api/customers', (req, res) => {
-        const query = 'SELECT customer.customer_id, first_name, last_name, count(rental.customer_id) AS count FROM customer INNER JOIN rental ON rental.customer_id=customer.customer_id GROUP BY customer.customer_id ORDER BY customer.customer_id'
+        const query = 'SELECT customer.customer_id, first_name, last_name, count(rental.customer_id) AS count FROM customer LEFT OUTER JOIN rental ON rental.customer_id=customer.customer_id GROUP BY customer.customer_id ORDER BY customer.customer_id'
     
         connection.query(query, (err, results) => {
             if(err) {
@@ -151,7 +151,7 @@ module.exports = (app) => {
 
     app.get('/api/customer-rented/:id', (req, res) => {
         let id = req.params.id;
-        const query = "SELECT film.title FROM film INNER JOIN inventory ON film.film_id = inventory.film_id INNER JOIN rental ON rental.inventory_id = inventory.inventory_id INNER JOIN customer ON rental.customer_id = customer.customer_id WHERE customer.customer_id = '" + id + "'"
+        const query = "SELECT film.title, rental.return_date FROM film INNER JOIN inventory ON film.film_id = inventory.film_id INNER JOIN rental ON rental.inventory_id = inventory.inventory_id INNER JOIN customer ON rental.customer_id = customer.customer_id WHERE customer.customer_id = '" + id + "'"
     
         connection.query(query, (err, results) => {
             if(err) {
@@ -162,4 +162,80 @@ module.exports = (app) => {
             res.json(results);
         })
     })
+
+    app.put('/api/customer/:id/update', (req, res) => {
+        let id = req.params.id
+        const updatedCustomer = req.body
+      
+        const query = `UPDATE customer SET ? WHERE customer.customer_id = ?`
+        const params = [updatedCustomer, id]
+      
+        connection.query(query, params, (err, result) => {
+          if (err) {
+            return res.status(500).json({ message: 'Error updating customer in database' })
+          }
+      
+          res.json({ message: 'Customer updated successfully' })
+        })
+    })
+
+    app.post('/api/customer-new', (req, res) => {
+        const customerData = req.body;
+        const query = `INSERT INTO customer SET ?`;
+        const values = {
+            store_id: customerData.storeId,
+            first_name: customerData.firstName.toUpperCase(),
+            last_name: customerData.lastName.toUpperCase(),
+            email: customerData.email.toUpperCase(),
+            address_id: customerData.addressId,
+            active: customerData.active
+        };
+
+        console.log(values)
+
+        connection.query(query, values, (err, results) => {
+            if (err) {
+            console.error('Error inserting customer:', err);
+            return res.status(500).json({ message: 'Error inserting customer' });
+            }
+
+            console.log(`Customer inserted successfully: ${results.insertId}`);
+            res.json({ message: 'Customer inserted successfully' });
+        });
+    });
+
+    app.delete('/api/customer-delete/:id', (req, res) => {
+        const id = req.params.id;
+        const query = `DELETE FROM customer WHERE customer.customer_id = ${id}`;
+        connection.query(query, (err, results) => {
+          if (err) {
+            console.error('Error deleting customer:', err);
+            return res.status(500).json({ message: 'Error deleting customer from database.' });
+          }
+          console.log(`Customer deleted successfully: ${id}`);
+          res.json({ message: 'Customer deleted successfully' });
+        });
+    });
+
+    app.post('/api/rental', (req, res) => {
+        const rentalData = req.body;
+        const query = `INSERT INTO rental SET ?`;
+        const values = {
+            inventory_id: rentalData.inventoryId,
+            customer_id: rentalData.renterId,
+            staff_id: rentalData.staffId
+        };
+
+        console.log(values)
+
+        connection.query(query, values, (err, results) => {
+            if (err) {
+            console.error('Error inserting rental:', err);
+            return res.status(500).json({ message: 'Error inserting rental into database. Make sure the values you entered are correct.' });
+            }
+
+            console.log(`Rental inserted successfully: ${results.insertId}`);
+            res.json({ message: 'Rental inserted successfully' });
+        });
+    });
 }
